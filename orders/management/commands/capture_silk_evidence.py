@@ -42,16 +42,15 @@ class Command(BaseCommand):
         client.get(broken_path)
         client.get(fixed_path)
 
-        def queries_for(path_prefix):
+        def queries_for(path):
             req = (SilkRequest.objects
-                   .filter(path="/api/orders/summary/broken/"
-                           if "broken" in path_prefix else "/api/orders/summary/")
+                   .filter(path=path)
                    .order_by("-start_time")
                    .first())
             return req.num_sql_queries if req else None
 
-        broken_q = queries_for("broken")
-        fixed_q = queries_for("fixed")
+        broken_q = queries_for("/api/orders/summary/broken/")
+        fixed_q = queries_for("/api/orders/summary/")
 
         out = Path(settings.BASE_DIR) / "docs" / "section1" / "silk-evidence.md"
         out.parent.mkdir(parents=True, exist_ok=True)

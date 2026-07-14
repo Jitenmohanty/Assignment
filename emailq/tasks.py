@@ -23,8 +23,10 @@ from .service import (BACKOFF_MAX_SECONDS, PERMANENT_FAILURE, SENT, THROTTLED,
                       TRANSIENT_FAILURE, attempt_delivery, backoff_seconds,
                       dead_letter, get_limiter, get_provider)
 
-# Separate ceiling for throttle retries so a long flash-sale backlog keeps
-# rescheduling instead of dead-lettering perfectly good emails.
+# Ceiling for *failure* retries (transient provider errors). Throttle retries
+# are deliberately NOT capped by this — see the THROTTLED branch below
+# (max_retries=None) — so a long flash-sale backlog keeps rescheduling instead
+# of dead-lettering perfectly good emails.
 MAX_FAILURE_RETRIES = 5
 
 

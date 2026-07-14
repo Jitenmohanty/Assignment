@@ -47,7 +47,7 @@ python manage.py migrate
 python manage.py test
 ```
 
-Expected: **28 tests, all passing.** (Section 2 tests need Redis running.)
+Expected: **29 tests, all passing.** (Section 2 tests need Redis running.)
 
 Run a single section's tests:
 

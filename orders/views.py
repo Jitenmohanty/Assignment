@@ -65,6 +65,10 @@ class FixedOrderSummaryView(_BaseOrderSummaryView):
             self.base_queryset()
             .select_related("customer")
             .annotate(
+                # The join on `items` fans out one row per item; distinct=True
+                # keeps the count correct, while Sum aggregates over those same
+                # joined rows for revenue — both in one GROUP BY, no item rows
+                # shipped to Python.
                 item_count=Count("items", distinct=True),
                 total_amount=Coalesce(
                     Sum(F("items__quantity") * F("items__unit_price")),

@@ -6,6 +6,7 @@ virtual clock — without a live broker and without Celery's eager-mode retry
 quirks. The Celery task in ``tasks.py`` is a thin translation layer on top.
 """
 
+import json
 from dataclasses import dataclass
 
 import redis
@@ -87,7 +88,6 @@ def dead_letter(job, reason, redis_client=None):
     inspect, drain, or replay. Kept separate from the Celery broker so a broker
     purge never discards evidence of failures.
     """
-    import json
     r = redis_client or get_redis()
     r.lpush(DEAD_LETTER_KEY, json.dumps({"job": job, "reason": reason}))
 

@@ -54,6 +54,8 @@ class TenantMiddleware:
                 token,
                 settings.TENANT_JWT_SECRET,
                 algorithms=[settings.TENANT_JWT_ALGORITHM],
+                # Reject tokens with no expiry; exp is verified by default.
+                options={"require": ["exp"]},
             )
         except jwt.PyJWTError:
             return None

@@ -102,6 +102,14 @@ class TenantMiddlewareTests(TestCase):
         )
         self.assertEqual(resp.json(), {"tenant": None, "visible_orders": 0})
 
+    def test_expired_jwt_is_rejected(self):
+        # A token that expired 10s ago must not bind a tenant (fail closed).
+        expired = make_tenant_token("acme", ttl_seconds=-10)
+        resp = self.client.get(
+            "/api/tenancy/whoami/", HTTP_AUTHORIZATION=f"Bearer {expired}"
+        )
+        self.assertEqual(resp.json(), {"tenant": None, "visible_orders": 0})
+
 
 class TenantAsyncContextTests(TestCase):
     """Proves the contextvars choice: concurrent async tasks don't leak tenants.

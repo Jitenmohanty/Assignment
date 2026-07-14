@@ -3,7 +3,7 @@
 Usage:
     python manage.py seed_orders --orders 250 --items 3
 Then hit:
-    /api/orders/summary/broker/?customer_id=<id>   (many queries)
+    /api/orders/summary/broken/?customer_id=<id>   (many queries)
     /api/orders/summary/?customer_id=<id>          (a couple of queries)
 """
 

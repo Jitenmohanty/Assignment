@@ -99,6 +99,25 @@ class RateLimiterTests(RedisKeyCleanupMixin, TestCase):
             t.join()
         self.assertEqual(sum(admitted), 10)
 
+    def test_fails_open_on_redis_error(self):
+        """Redis down + fail_open=True => admit (transactional default)."""
+        bad = redis.Redis(host="127.0.0.1", port=1)  # nothing listening
+        rl = RedisSlidingWindowRateLimiter(
+            bad, key=TEST_PREFIX + "rl", limit=5, window_seconds=10,
+            fail_open=True)
+        allowed, retry_after = rl.acquire(now_ms=1)
+        self.assertTrue(allowed)
+        self.assertEqual(retry_after, 0.0)
+
+    def test_fails_closed_on_redis_error_when_configured(self):
+        """Redis down + fail_open=False => raise rather than silently admit."""
+        bad = redis.Redis(host="127.0.0.1", port=1)
+        rl = RedisSlidingWindowRateLimiter(
+            bad, key=TEST_PREFIX + "rl", limit=5, window_seconds=10,
+            fail_open=False)
+        with self.assertRaises(redis.RedisError):
+            rl.acquire(now_ms=1)
+
 
 class DeliveryCoreTests(RedisKeyCleanupMixin, TestCase):
     def _setup(self, limit=100):

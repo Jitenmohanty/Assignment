@@ -136,6 +136,9 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 # Rate-limiter configuration (Section 2). 200 emails / 60s window.
 EMAIL_RATE_LIMIT = int(os.environ.get("EMAIL_RATE_LIMIT", "200"))
 EMAIL_RATE_WINDOW_SECONDS = int(os.environ.get("EMAIL_RATE_WINDOW_SECONDS", "60"))
+# On a Redis outage: True = keep sending (transactional default, provider 429 +
+# backoff is the safety net); False = block sending to never breach the cap.
+RATE_LIMIT_FAIL_OPEN = os.environ.get("RATE_LIMIT_FAIL_OPEN", "1") == "1"
 
 
 # ---------------------------------------------------------------------------

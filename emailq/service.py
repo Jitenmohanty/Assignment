@@ -47,6 +47,7 @@ def get_limiter(redis_client=None, key=RATE_LIMIT_KEY, limit=None, window=None):
         limit=limit if limit is not None else settings.EMAIL_RATE_LIMIT,
         window_seconds=window if window is not None
         else settings.EMAIL_RATE_WINDOW_SECONDS,
+        fail_open=settings.RATE_LIMIT_FAIL_OPEN,
     )
 
 

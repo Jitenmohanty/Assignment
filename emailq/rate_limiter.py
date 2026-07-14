@@ -23,6 +23,8 @@ the guarantee a plain GET/INCR pair or a Python-side check cannot make.
 import time
 import uuid
 
+import redis
+
 # KEYS[1] = limiter key
 # ARGV[1] = now_ms, ARGV[2] = window_ms, ARGV[3] = limit, ARGV[4] = member id
 # returns {allowed(0|1), retry_after_ms}
@@ -59,11 +61,16 @@ end
 
 
 class RedisSlidingWindowRateLimiter:
-    def __init__(self, redis_client, key, limit, window_seconds):
+    def __init__(self, redis_client, key, limit, window_seconds, fail_open=True):
         self.redis = redis_client
         self.key = key
         self.limit = int(limit)
         self.window_ms = int(window_seconds * 1000)
+        # fail_open: on a Redis outage, admit the event rather than block all
+        # sending. Right default for transactional email — the provider's own
+        # 429 + our exponential backoff remain a second line of defence. Flip to
+        # False for bulk/marketing mail where breaching the cap has real cost.
+        self.fail_open = fail_open
         # register_script uses EVALSHA with an EVAL fallback — the script is
         # cached in Redis, only the SHA travels on subsequent calls.
         self._script = redis_client.register_script(_SLIDING_WINDOW_LUA)
@@ -81,10 +88,17 @@ class RedisSlidingWindowRateLimiter:
             now_ms = int(time.time() * 1000)
         if member is None:
             member = uuid.uuid4().hex
-        allowed, retry_after_ms = self._script(
-            keys=[self.key],
-            args=[now_ms, self.window_ms, self.limit, member],
-        )
+        try:
+            allowed, retry_after_ms = self._script(
+                keys=[self.key],
+                args=[now_ms, self.window_ms, self.limit, member],
+            )
+        except redis.RedisError:
+            # Redis is the enforcement mechanism; if it is down we cannot make a
+            # decision. Fail open (admit) or closed (block) per configuration.
+            if self.fail_open:
+                return True, 0.0
+            raise
         return bool(allowed), max(0.0, retry_after_ms / 1000.0)
 
     def current_count(self, now_ms=None):
